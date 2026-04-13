@@ -25,7 +25,8 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fontforge python3-scour xsltproc
+          sudo apt-get install -y fontforge xsltproc
+          pip3 install scour
 
       - name: Build fonts (SFD -> WOFF2 -> base64)
         run: |
@@ -38,7 +39,7 @@ jobs:
       - name: Build favicon (SVG -> optimized -> base64)
         run: |
           set -x
-          python3 -m scour \
+          scour \
             --enable-id-stripping \
             --enable-comment-stripping \
             --remove-descriptive-elements \
@@ -53,7 +54,7 @@ jobs:
           set -x
           PRECIOUS_IDS="bus,city,citycopy,codebg,codetext,clouds,cloudscopy,destination,origin,origindest,train,tram,trees,treescopy,serviceid,servicename,sky,ticket,ticketbottombg,ticketdate,tickettime,qr,zone"
           xsltproc svgclean.xsl tableau.svg > tableau.min.svg
-          python3 -m scour \
+          scour \
             --enable-id-stripping \
             --enable-comment-stripping \
             --remove-descriptive-elements \
