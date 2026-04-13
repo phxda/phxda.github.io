@@ -1,0 +1,9 @@
+{
+  "name": "CharmBypass",
+  "short_name": "CharmBypass",
+  "display": "standalone",
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait"
+}

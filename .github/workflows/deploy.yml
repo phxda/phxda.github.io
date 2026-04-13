@@ -101,6 +101,7 @@ jobs:
 
           print("index.html assembled successfully.")
           EOF
+          cp manifest.json _site/manifest.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
