@@ -25,7 +25,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y fontforge xsltproc
+          sudo apt-get install -y fontforge xsltproc librsvg2-bin
           pip3 install scour
 
       - name: Build fonts (SFD -> WOFF2 -> base64)
@@ -102,6 +102,11 @@ jobs:
           print("index.html assembled successfully.")
           EOF
           cp manifest.json _site/manifest.json
+
+      - name: Generate PNG icons from favicon SVG
+        run: |
+          rsvg-convert -w 192 -h 192 favicon.svg -o _site/icon-192.png
+          rsvg-convert -w 512 -h 512 favicon.svg -o _site/icon-512.png
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
