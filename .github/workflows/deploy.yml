@@ -1,0 +1,116 @@
+name: Build and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fontforge python3-scour xsltproc
+
+      - name: Build fonts (SFD -> WOFF2 -> base64)
+        run: |
+          fontforge -script sfd2woff.ff CharmBypass-Regular.sfd CharmBypass-Regular.woff2
+          fontforge -script sfd2woff.ff CharmBypass-Bold.sfd CharmBypass-Bold.woff2
+          base64 -w0 CharmBypass-Regular.woff2 > CharmBypass-Regular.base64
+          base64 -w0 CharmBypass-Bold.woff2 > CharmBypass-Bold.base64
+
+      - name: Build favicon (SVG -> optimized -> base64)
+        run: |
+          scour \
+            --enable-id-stripping \
+            --enable-comment-stripping \
+            --remove-descriptive-elements \
+            --no-renderer-workaround \
+            --no-line-breaks \
+            --error-on-flowtext \
+            favicon.svg > favicon.min.svg
+          base64 -w0 favicon.min.svg > favicon.base64
+
+      - name: Build tableau SVG (XSL + scour optimization)
+        run: |
+          PRECIOUS_IDS="bus,city,citycopy,codebg,codetext,clouds,cloudscopy,destination,origin,origindest,train,tram,trees,treescopy,serviceid,servicename,sky,ticket,ticketbottombg,ticketdate,tickettime,qr,zone"
+          xsltproc svgclean.xsl tableau.svg > tableau.min.svg
+          scour \
+            --enable-id-stripping \
+            --enable-comment-stripping \
+            --remove-descriptive-elements \
+            --no-renderer-workaround \
+            --no-line-breaks \
+            --error-on-flowtext \
+            "--protect-ids-list=${PRECIOUS_IDS}" \
+            --strip-xml-prolog \
+            tableau.min.svg > tableau.min.min.svg
+
+      - name: Assemble index.html (substitute @PLACEHOLDERS@)
+        run: |
+          mkdir -p _site
+          python3 - <<'EOF'
+          import sys
+
+          with open('index.html', 'r') as f:
+              content = f.read()
+
+          with open('CharmBypass-Regular.base64', 'r') as f:
+              cbpregular = f.read().strip()
+
+          with open('CharmBypass-Bold.base64', 'r') as f:
+              cbpbold = f.read().strip()
+
+          with open('favicon.base64', 'r') as f:
+              favicon = f.read().strip()
+
+          with open('tableau.min.min.svg', 'r') as f:
+              svgdata = f.read()
+
+          content = content.replace('@CBPREGULAR@', cbpregular)
+          content = content.replace('@CBPBOLD@', cbpbold)
+          content = content.replace('@FAVICON@', favicon)
+          content = content.replace('@SVGDATA@', svgdata)
+
+          missing = [p for p in ['@CBPREGULAR@', '@CBPBOLD@', '@FAVICON@', '@SVGDATA@'] if p in content]
+          if missing:
+              print(f"ERROR: unreplaced placeholders: {missing}", file=sys.stderr)
+              sys.exit(1)
+
+          with open('_site/index.html', 'w') as f:
+              f.write(content)
+
+          print("index.html assembled successfully.")
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
