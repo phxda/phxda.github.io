@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +36,7 @@ jobs:
 
       - name: Build favicon (SVG -> optimized -> base64)
         run: |
-          scour \
+          python3 -m scour \
             --enable-id-stripping \
             --enable-comment-stripping \
             --remove-descriptive-elements \
@@ -48,7 +50,7 @@ jobs:
         run: |
           PRECIOUS_IDS="bus,city,citycopy,codebg,codetext,clouds,cloudscopy,destination,origin,origindest,train,tram,trees,treescopy,serviceid,servicename,sky,ticket,ticketbottombg,ticketdate,tickettime,qr,zone"
           xsltproc svgclean.xsl tableau.svg > tableau.min.svg
-          scour \
+          python3 -m scour \
             --enable-id-stripping \
             --enable-comment-stripping \
             --remove-descriptive-elements \
