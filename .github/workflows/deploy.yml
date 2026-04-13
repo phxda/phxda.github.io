@@ -29,6 +29,7 @@ jobs:
 
       - name: Build fonts (SFD -> WOFF2 -> base64)
         run: |
+          set -x
           fontforge -script sfd2woff.ff CharmBypass-Regular.sfd CharmBypass-Regular.woff2
           fontforge -script sfd2woff.ff CharmBypass-Bold.sfd CharmBypass-Bold.woff2
           base64 -w0 CharmBypass-Regular.woff2 > CharmBypass-Regular.base64
@@ -36,6 +37,7 @@ jobs:
 
       - name: Build favicon (SVG -> optimized -> base64)
         run: |
+          set -x
           python3 -m scour \
             --enable-id-stripping \
             --enable-comment-stripping \
@@ -48,6 +50,7 @@ jobs:
 
       - name: Build tableau SVG (XSL + scour optimization)
         run: |
+          set -x
           PRECIOUS_IDS="bus,city,citycopy,codebg,codetext,clouds,cloudscopy,destination,origin,origindest,train,tram,trees,treescopy,serviceid,servicename,sky,ticket,ticketbottombg,ticketdate,tickettime,qr,zone"
           xsltproc svgclean.xsl tableau.svg > tableau.min.svg
           python3 -m scour \
